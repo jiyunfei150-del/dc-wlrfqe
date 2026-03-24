@@ -2,458 +2,252 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数据中转站架构图</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: #f5f7fa;
-    min-height: 100vh;
-    padding: 32px;
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
+  background: #f0f2f5;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 32px 24px 48px;
+}
+h1 { font-size:20px; color:#1a1a2e; font-weight:700; margin-bottom:6px; }
+.subtitle { font-size:12px; color:#999; margin-bottom:28px; }
 
-  .page-header {
-    text-align: center;
-    margin-bottom: 36px;
-  }
-  .page-header h1 {
-    font-size: 26px;
-    font-weight: 700;
-    color: #1a1a2e;
-    letter-spacing: 1px;
-  }
-  .page-header p {
-    font-size: 13px;
-    color: #888;
-    margin-top: 6px;
-  }
+.canvas {
+  background:#fff;
+  border-radius:16px;
+  box-shadow: 0 2px 24px rgba(0,0,0,0.09);
+  padding: 40px 32px 36px;
+  width: 100%;
+  max-width: 1100px;
+}
 
-  .diagram {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
-    overflow: hidden;
-    min-height: 560px;
-  }
+svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  display: block;
+}
 
-  /* ── 左侧：数据源区 ── */
-  .section-source {
-    flex: 0 0 260px;
-    background: #f0f4ff;
-    padding: 28px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    border-right: none;
-  }
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    color: #999;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .dw-card {
-    background: #fff;
-    border: 1.5px solid #d0d9f5;
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: relative;
-  }
-  .dw-card .icon {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-  .dw-card .info { flex: 1; }
-  .dw-card .name { font-size: 13px; font-weight: 600; color: #2c3e50; }
-  .dw-card .desc { font-size: 11px; color: #aaa; margin-top: 2px; }
-  .dw-card .arrow {
-    position: absolute; right: -28px; top: 50%; transform: translateY(-50%);
-    width: 28px; height: 2px; background: #c5d0f0; z-index: 2;
-  }
-  .dw-card .arrow::after {
-    content: '';
-    position: absolute; right: -1px; top: -4px;
-    border: 5px solid transparent;
-    border-left-color: #c5d0f0;
-  }
-  .icon-domestic { background: #e8f4fd; }
-  .icon-overseas { background: #fdf0e8; }
-  .icon-finance  { background: #edfaf0; }
-  .icon-other    { background: #fdf5e8; }
+/* zone labels */
+.zone-label {
+  font-size: 11px;
+  fill: #aaa;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
 
-  /* ── 中间：安全墙 ── */
-  .section-wall {
-    flex: 0 0 110px;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 10px;
-    gap: 18px;
-    position: relative;
-  }
-  .wall-title {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    font-size: 13px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 3px;
-    position: absolute;
-    top: 24px;
-  }
-  .wall-badge {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
-    padding: 8px 10px;
-    text-align: center;
-    width: 88px;
-    margin-top: 40px;
-  }
-  .wall-badge .b-icon { font-size: 18px; display: block; margin-bottom: 4px; }
-  .wall-badge .b-name { font-size: 11px; color: #e0e0e0; font-weight: 600; line-height: 1.3; }
-  .wall-badge .b-desc { font-size: 10px; color: #aaa; margin-top: 2px; line-height: 1.3; }
-  .wall-line {
-    width: 1px;
-    flex: 1;
-    max-height: 20px;
-    background: rgba(255,255,255,0.15);
-  }
+/* dw nodes */
+.dw-box { fill:#f0f4ff; stroke:#b0bef5; stroke-width:1.5; rx:8; }
+.dw-text { font-size:12px; fill:#2c3e50; font-weight:600; }
+.dw-sub  { font-size:10px; fill:#aaa; }
 
-  /* ── 中右：中转站 ── */
-  .section-hub {
-    flex: 1;
-    background: #fff;
-    padding: 28px 24px;
-    display: flex;
-    flex-direction: column;
-    border-right: 1.5px dashed #e0e0e0;
-  }
-  .hub-box {
-    border: 2px solid #4a6cf7;
-    border-radius: 12px;
-    padding: 18px 20px;
-    background: #f6f8ff;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .hub-title {
-    font-size: 15px; font-weight: 700; color: #4a6cf7;
-    display: flex; align-items: center; gap: 8px;
-    border-bottom: 1px solid #dde4fc;
-    padding-bottom: 10px;
-  }
-  .hub-feature {
-    display: flex; align-items: flex-start; gap: 8px;
-    padding: 8px 10px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #eaefff;
-  }
-  .hub-feature .f-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-  .hub-feature .f-text .f-name { font-size: 12px; font-weight: 600; color: #2c3e50; }
-  .hub-feature .f-text .f-detail { font-size: 11px; color: #999; margin-top: 2px; }
-  .hub-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-  .tag {
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 20px;
-    font-weight: 600;
-  }
-  .tag-blue  { background: #e8f0fe; color: #4a6cf7; }
-  .tag-green { background: #e8faf0; color: #27ae60; }
-  .tag-orange{ background: #fef0e8; color: #e67e22; }
+/* wall */
+.wall-bg { fill:#1a1a2e; rx:4; }
+.wall-text { fill:#fff; font-size:12px; font-weight:700; letter-spacing:2px; }
+.wall-tag-bg  { fill:rgba(255,255,255,0.12); rx:4; }
+.wall-tag-text{ fill:#e0e0e0; font-size:10px; }
 
-  /* 配置入口说明 */
-  .config-note {
-    margin-top: 10px;
-    padding: 10px 14px;
-    background: #fffbe6;
-    border-left: 3px solid #f0c040;
-    border-radius: 6px;
-    font-size: 11px;
-    color: #7a5a00;
-    line-height: 1.6;
-  }
-  .config-note strong { color: #5a3e00; }
+/* hub */
+.hub-box { fill:#f6f8ff; stroke:#4a6cf7; stroke-width:2; rx:10; }
+.hub-title { font-size:14px; fill:#4a6cf7; font-weight:700; }
+.hub-item { font-size:11px; fill:#555; }
+.hub-tag  { fill:#e8f0fe; rx:10; }
+.hub-tag-text { fill:#4a6cf7; font-size:10px; }
 
-  /* ── 右侧：OpenClaw ── */
-  .section-oc {
-    flex: 0 0 200px;
-    background: #f9f9f9;
-    padding: 28px 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-  }
-  .oc-box {
-    background: linear-gradient(135deg, #4a6cf7 0%, #7c3aed 100%);
-    border-radius: 14px;
-    padding: 20px 18px;
-    text-align: center;
-    color: #fff;
-    width: 100%;
-    box-shadow: 0 6px 20px rgba(74,108,247,0.3);
-  }
-  .oc-box .oc-logo { font-size: 36px; display: block; margin-bottom: 8px; }
-  .oc-box .oc-name { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
-  .oc-box .oc-sub  { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 4px; }
-  .oc-conn {
-    width: 100%;
-    background: #fff;
-    border: 1.5px solid #d0d9f5;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 11px;
-    color: #555;
-    text-align: center;
-    line-height: 1.6;
-  }
-  .oc-conn strong { color: #4a6cf7; font-size: 12px; display: block; margin-bottom: 2px; }
+/* openclaw */
+.oc-box { rx:12; }
+.oc-title { font-size:15px; fill:#fff; font-weight:700; }
+.oc-sub   { font-size:11px; fill:rgba(255,255,255,0.8); }
 
-  /* 用户查询入口 */
-  .query-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
-    padding: 14px 20px;
-    background: #f0f4ff;
-    border-radius: 10px;
-    border: 1.5px dashed #b0bef5;
-  }
-  .query-row .q-icon { font-size: 24px; }
-  .query-row .q-text { font-size: 12px; color: #4a6cf7; font-weight: 600; }
-  .query-row .q-sub  { font-size: 11px; color: #999; }
+/* query box */
+.q-box { fill:#f9faff; stroke:#d0d9f5; stroke-width:1.5; rx:8; }
+.q-text { font-size:11px; fill:#4a6cf7; }
 
-  /* 水平箭头连接 hub → oc */
-  .hub-to-oc {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    margin: 4px 0;
-  }
-  .connect-arrow {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 11px; color: #4a6cf7; font-weight: 600;
-  }
-  .arrow-line {
-    width: 40px; height: 2px; background: #4a6cf7;
-    position: relative;
-  }
-  .arrow-line::after {
-    content: '';
-    position: absolute; right: -1px; top: -4px;
-    border: 5px solid transparent;
-    border-left-color: #4a6cf7;
-  }
-
-  .footer {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 11px;
-    color: #ccc;
-  }
+/* arrows */
+.arr { fill:none; stroke:#b0bef5; stroke-width:1.8; marker-end:url(#ah); }
+.arr-blue { fill:none; stroke:#4a6cf7; stroke-width:2; marker-end:url(#ahb); }
+.arr-down { fill:none; stroke:#ccc; stroke-width:1.5; stroke-dasharray:4,3; marker-end:url(#ahg); }
 </style>
 </head>
 <body>
+<h1>数据中转站架构图</h1>
+<p class="subtitle">分散数仓 → 安全管控层 → 统一中转站 → OpenClaw 智能问数</p>
 
-<div class="page-header">
-  <h1>📡 数据中转站架构图</h1>
-  <p>分散数仓 → 安全管控层 → 统一中转站 → OpenClaw 智能问数</p>
+<div class="canvas">
+<svg viewBox="0 0 1040 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 箭头 -->
+    <marker id="ah"  markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#b0bef5"/>
+    </marker>
+    <marker id="ahb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4a6cf7"/>
+    </marker>
+    <marker id="ahg" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ccc"/>
+    </marker>
+    <!-- OpenClaw 渐变 -->
+    <linearGradient id="ocGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a6cf7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <!-- 安全墙渐变 -->
+    <linearGradient id="wallGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0f3460"/>
+    </linearGradient>
+    <!-- zone highlight -->
+    <rect id="zoneSrc" x="8" y="30" width="220" height="460" rx="12"
+          fill="#f5f7ff" stroke="#dde4f5" stroke-width="1" stroke-dasharray="5,3"/>
+  </defs>
+
+  <!-- ─── Zone 背景 ─── -->
+  <use href="#zoneSrc"/>
+  <rect x="248" y="30" width="110" height="460" rx="12"
+        fill="#1a1a2e" stroke="none"/>
+  <rect x="378" y="30" width="330" height="460" rx="12"
+        fill="#f9faff" stroke="#e0e8ff" stroke-width="1"/>
+  <rect x="728" y="30" width="304" height="460" rx="12"
+        fill="#faf9ff" stroke="#e8e0ff" stroke-width="1"/>
+
+  <!-- ─── Zone 标签 ─── -->
+  <text class="zone-label" x="118" y="22" text-anchor="middle">项目组数仓</text>
+  <text class="zone-label" x="303" y="22" text-anchor="middle" fill="#666">安全管控</text>
+  <text class="zone-label" x="543" y="22" text-anchor="middle">数据中转站</text>
+  <text class="zone-label" x="880" y="22" text-anchor="middle">AI 分析层</text>
+
+  <!-- ─── 数据仓库节点 ─── -->
+  <!-- 国内A -->
+  <rect class="dw-box" x="22" y="55" width="194" height="52"/>
+  <text class="dw-text" x="62" y="77">🇨🇳  国内项目组 A</text>
+  <text class="dw-sub"  x="62" y="94">StarRocks · 上海</text>
+
+  <!-- 国内B -->
+  <rect class="dw-box" x="22" y="127" width="194" height="52"/>
+  <text class="dw-text" x="62" y="149">🎮  国内项目组 B</text>
+  <text class="dw-sub"  x="62" y="166">ClickHouse · 北京</text>
+
+  <!-- 海外 -->
+  <rect class="dw-box" x="22" y="199" width="194" height="52"/>
+  <text class="dw-text" x="62" y="221">🌏  海外项目组</text>
+  <text class="dw-sub"  x="62" y="238">BigQuery · 新加坡</text>
+
+  <!-- 财务 -->
+  <rect class="dw-box" x="22" y="271" width="194" height="52"/>
+  <text class="dw-text" x="62" y="293">💰  财务数仓</text>
+  <text class="dw-sub"  x="62" y="310">StarRocks · 内网</text>
+
+  <!-- 其他 -->
+  <rect class="dw-box" x="22" y="343" width="194" height="52"/>
+  <text class="dw-text" x="62" y="365">📦  其他项目组</text>
+  <text class="dw-sub"  x="62" y="382">MySQL / PG · 各地</text>
+
+  <!-- ─── 箭头：数仓 → 安全墙 ─── -->
+  <line class="arr" x1="216" y1="81"  x2="244" y2="81"/>
+  <line class="arr" x1="216" y1="153" x2="244" y2="153"/>
+  <line class="arr" x1="216" y1="225" x2="244" y2="225"/>
+  <line class="arr" x1="216" y1="297" x2="244" y2="297"/>
+  <line class="arr" x1="216" y1="369" x2="244" y2="369"/>
+
+  <!-- ─── 安全管控层 ─── -->
+  <text class="wall-text" x="303" y="130" text-anchor="middle" writing-mode="vertical-rl" letter-spacing="4">安 全 管 控</text>
+
+  <!-- wall badges -->
+  <rect class="wall-tag-bg" x="265" y="170" width="76" height="44" rx="6"/>
+  <text x="303" y="188" text-anchor="middle" font-size="16">🔒</text>
+  <text class="wall-tag-text" x="303" y="203" text-anchor="middle">脱敏处理</text>
+
+  <rect class="wall-tag-bg" x="265" y="224" width="76" height="44" rx="6"/>
+  <text x="303" y="242" text-anchor="middle" font-size="16">🛡️</text>
+  <text class="wall-tag-text" x="303" y="257" text-anchor="middle">安全检测</text>
+
+  <rect class="wall-tag-bg" x="265" y="278" width="76" height="44" rx="6"/>
+  <text x="303" y="296" text-anchor="middle" font-size="16">📋</text>
+  <text class="wall-tag-text" x="303" y="311" text-anchor="middle">操作审计</text>
+
+  <rect class="wall-tag-bg" x="265" y="332" width="76" height="44" rx="6"/>
+  <text x="303" y="350" text-anchor="middle" font-size="16">⚙️</text>
+  <text class="wall-tag-text" x="303" y="365" text-anchor="middle">同步策略</text>
+
+  <!-- ─── 箭头：安全墙 → 中转站 ─── -->
+  <line class="arr-blue" x1="358" y1="260" x2="374" y2="260"/>
+
+  <!-- ─── 数据中转站 ─── -->
+  <rect class="hub-box" x="388" y="50" width="306" height="420"/>
+  <text class="hub-title" x="541" y="82" text-anchor="middle">🏗️  数据中转站</text>
+  <line stroke="#dde4fc" stroke-width="1" x1="400" y1="92" x2="682" y2="92"/>
+
+  <!-- hub 内容 -->
+  <!-- 表接入配置 -->
+  <rect fill="#f0f4ff" rx="6" x="404" y="106" width="282" height="56"/>
+  <text font-size="12" fill="#4a6cf7" font-weight="600" x="424" y="126">📊  表接入配置</text>
+  <text font-size="10" fill="#777" x="424" y="143">项目策划 / 制作人在查询平台</text>
+  <text font-size="10" fill="#777" x="424" y="156">自助选表，决定是否加入 AI 分析</text>
+
+  <!-- 脱敏规则 -->
+  <rect fill="#f0f4ff" rx="6" x="404" y="174" width="282" height="66"/>
+  <text font-size="12" fill="#4a6cf7" font-weight="600" x="424" y="194">🔐  字段脱敏规则</text>
+  <text font-size="10" fill="#777" x="424" y="210">敏感字段替换为语义短码</text>
+  <rect fill="#e8f0fe" rx="10" x="424" y="216" width="64" height="16"/>
+  <text font-size="10" fill="#4a6cf7" x="456" y="228" text-anchor="middle">项目:aecfbd</text>
+  <rect fill="#e8faf0" rx="10" x="496" y="216" width="64" height="16"/>
+  <text font-size="10" fill="#27ae60" x="528" y="228" text-anchor="middle">代理:cfabde</text>
+  <rect fill="#fef0e8" rx="10" x="568" y="216" width="64" height="16"/>
+  <text font-size="10" fill="#e67e22" x="600" y="228" text-anchor="middle">主体:bdfaec</text>
+
+  <!-- 同步调度 -->
+  <rect fill="#f0f4ff" rx="6" x="404" y="252" width="282" height="56"/>
+  <text font-size="12" fill="#4a6cf7" font-weight="600" x="424" y="272">🔄  同步调度</text>
+  <text font-size="10" fill="#777" x="424" y="289">全量 / 增量 · T+1 / 每小时</text>
+  <text font-size="10" fill="#777" x="424" y="302">支持多数据源异构同步</text>
+
+  <!-- 脱敏数据存储 -->
+  <rect fill="#f0f4ff" rx="6" x="404" y="320" width="282" height="56"/>
+  <text font-size="12" fill="#4a6cf7" font-weight="600" x="424" y="340">🗄️  脱敏数据存储</text>
+  <text font-size="10" fill="#777" x="424" y="357">已脱敏的孪生视图，统一存储</text>
+  <text font-size="10" fill="#777" x="424" y="370">AI 只读权限·最小化授权</text>
+
+  <!-- 配置入口提示 -->
+  <rect fill="#fffbe6" stroke="#f0c040" stroke-width="1" rx="6" x="404" y="388" width="282" height="28"/>
+  <text font-size="10" fill="#7a5a00" x="416" y="401">📌  配置入口：查询平台 → 表管理 → AI 分析设置</text>
+  <text font-size="10" fill="#7a5a00" x="416" y="412">同步完成后自动写入中转站</text>
+
+  <!-- ─── 箭头：中转站 → OpenClaw ─── -->
+  <line class="arr-blue" x1="694" y1="260" x2="724" y2="260"/>
+
+  <!-- ─── OpenClaw ─── -->
+  <rect x="738" y="80" width="278" height="140" rx="12" fill="url(#ocGrad)"/>
+  <text x="877" y="126" text-anchor="middle" font-size="36">🤖</text>
+  <text class="oc-title" x="877" y="160" text-anchor="middle">OpenClaw</text>
+  <text class="oc-sub" x="877" y="178" text-anchor="middle">智能数据分析引擎</text>
+  <text class="oc-sub" x="877" y="194" text-anchor="middle">只读 · 仅访问脱敏数据</text>
+
+  <!-- OpenClaw 功能说明 -->
+  <rect class="q-box" x="738" y="236" width="278" height="50"/>
+  <text font-size="11" fill="#4a6cf7" font-weight="600" x="877" y="257" text-anchor="middle">💬  自然语言问数</text>
+  <text font-size="10" fill="#888" x="877" y="275" text-anchor="middle">直接对话查数据，无需写 SQL</text>
+
+  <rect class="q-box" x="738" y="298" width="278" height="50"/>
+  <text font-size="11" fill="#4a6cf7" font-weight="600" x="877" y="319" text-anchor="middle">🔍  AI 分析 / 报表生成</text>
+  <text font-size="10" fill="#888" x="877" y="337" text-anchor="middle">自动生成图表、趋势分析、归因</text>
+
+  <rect class="q-box" x="738" y="360" width="278" height="50"/>
+  <text font-size="11" fill="#4a6cf7" font-weight="600" x="877" y="381" text-anchor="middle">📡  接入渠道</text>
+  <text font-size="10" fill="#888" x="877" y="399" text-anchor="middle">查询平台 / 飞书机器人 / API</text>
+
+  <!-- ─── 底部：用户访问示意 ─── -->
+  <rect x="388" y="480" width="628" height="30" rx="8" fill="#f0f4ff" stroke="#d0d9f5" stroke-width="1"/>
+  <text font-size="11" fill="#4a6cf7" x="702" y="500" text-anchor="middle">
+    👤 用户（策划/制作人/财务/运营）→ 查询平台 / 飞书  →  OpenClaw  →  中转站（脱敏数据）
+  </text>
+
+</svg>
 </div>
 
-<div class="diagram">
-
-  <!-- 左：数据源 -->
-  <div class="section-source">
-    <div class="section-label">数据源层 · 项目组数仓</div>
-
-    <div class="dw-card">
-      <div class="icon icon-domestic">🇨🇳</div>
-      <div class="info">
-        <div class="name">国内项目组 A</div>
-        <div class="desc">StarRocks · 上海</div>
-      </div>
-      <div class="arrow"></div>
-    </div>
-
-    <div class="dw-card">
-      <div class="icon icon-domestic">🎮</div>
-      <div class="info">
-        <div class="name">国内项目组 B</div>
-        <div class="desc">ClickHouse · 北京</div>
-      </div>
-      <div class="arrow"></div>
-    </div>
-
-    <div class="dw-card">
-      <div class="icon icon-overseas">🌏</div>
-      <div class="info">
-        <div class="name">海外项目组</div>
-        <div class="desc">BigQuery · 新加坡</div>
-      </div>
-      <div class="arrow"></div>
-    </div>
-
-    <div class="dw-card">
-      <div class="icon icon-finance">💰</div>
-      <div class="info">
-        <div class="name">财务数仓</div>
-        <div class="desc">StarRocks · 内网</div>
-      </div>
-      <div class="arrow"></div>
-    </div>
-
-    <div class="dw-card">
-      <div class="icon icon-other">📦</div>
-      <div class="info">
-        <div class="name">其他项目组</div>
-        <div class="desc">MySQL / PG · 各地</div>
-      </div>
-      <div class="arrow"></div>
-    </div>
-  </div>
-
-  <!-- 中：安全墙 -->
-  <div class="section-wall">
-    <div class="wall-title">安 全 管 控 层</div>
-
-    <div class="wall-badge">
-      <span class="b-icon">🔒</span>
-      <div class="b-name">脱敏处理</div>
-      <div class="b-desc">字段级<br>可配置</div>
-    </div>
-    <div class="wall-line"></div>
-    <div class="wall-badge">
-      <span class="b-icon">🛡️</span>
-      <div class="b-name">安全检测</div>
-      <div class="b-desc">敏感字段<br>二次扫描</div>
-    </div>
-    <div class="wall-line"></div>
-    <div class="wall-badge">
-      <span class="b-icon">📋</span>
-      <div class="b-name">访问审计</div>
-      <div class="b-desc">操作全量<br>日志记录</div>
-    </div>
-    <div class="wall-line"></div>
-    <div class="wall-badge">
-      <span class="b-icon">⚙️</span>
-      <div class="b-name">同步策略</div>
-      <div class="b-desc">T+1 / 1h<br>全量/增量</div>
-    </div>
-  </div>
-
-  <!-- 中右：中转站 -->
-  <div class="section-hub">
-    <div class="section-label">数据中转站</div>
-    <div class="hub-box">
-      <div class="hub-title">
-        🏗️ 统一数据中转站
-      </div>
-
-      <div class="hub-feature">
-        <span class="f-icon">📊</span>
-        <div class="f-text">
-          <div class="f-name">表接入配置</div>
-          <div class="f-detail">项目策划/制作人在查询平台自助选表接入 AI 分析</div>
-        </div>
-      </div>
-
-      <div class="hub-feature">
-        <span class="f-icon">🔐</span>
-        <div class="f-text">
-          <div class="f-name">脱敏规则配置</div>
-          <div class="f-detail">字段级脱敏，敏感字段替换为语义短码</div>
-          <div class="hub-tags">
-            <span class="tag tag-blue">项目:aecfbd</span>
-            <span class="tag tag-green">代理:cfabde</span>
-            <span class="tag tag-orange">主体:bdfaec</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="hub-feature">
-        <span class="f-icon">🔄</span>
-        <div class="f-text">
-          <div class="f-name">同步调度</div>
-          <div class="f-detail">支持全量 / 增量，T+1 或每小时同步</div>
-        </div>
-      </div>
-
-      <div class="hub-feature">
-        <span class="f-icon">🗄️</span>
-        <div class="f-text">
-          <div class="f-name">脱敏数据存储</div>
-          <div class="f-detail">统一存储已脱敏的孪生视图，供 AI 查询</div>
-        </div>
-      </div>
-
-      <div class="config-note">
-        <strong>📌 配置入口：</strong>项目策划或制作人在 <strong>查询平台</strong> 中，针对每张表独立配置：是否加入 AI 分析、哪些字段需脱敏、同步方案与频率。配置完成后自动同步至中转站。
-      </div>
-    </div>
-  </div>
-
-  <!-- 右：OpenClaw -->
-  <div class="section-oc">
-    <div class="section-label" style="text-align:center">AI 分析层</div>
-
-    <div class="oc-box">
-      <span class="oc-logo">🤖</span>
-      <div class="oc-name">OpenClaw</div>
-      <div class="oc-sub">智能数据分析引擎</div>
-    </div>
-
-    <div class="oc-conn">
-      <strong>🔗 只读接入</strong>
-      仅读取中转站<br>脱敏后数据<br>网络隔离·权限最小化
-    </div>
-
-    <div class="oc-conn">
-      <strong>💬 自然语言问数</strong>
-      查询平台 / 飞书<br>直接对话查数据
-    </div>
-  </div>
-
-</div>
-
-<!-- 底部说明 -->
-<div class="query-row" style="margin-top:20px; background:#fff; border-color:#e0e0e0;">
-  <span class="q-icon">👤</span>
-  <div>
-    <div class="q-text">用户端：查询平台 / 飞书机器人</div>
-    <div class="q-sub">项目策划、制作人、财务、运营 均可通过自然语言直接问数，无需写 SQL</div>
-  </div>
-  <span style="font-size:20px; color:#4a6cf7">→</span>
-  <span style="font-size:20px">🤖</span>
-  <span style="font-size:11px; color:#4a6cf7; font-weight:600;">OpenClaw</span>
-  <span style="font-size:20px; color:#4a6cf7">→</span>
-  <span style="font-size:20px">🏗️</span>
-  <span style="font-size:11px; color:#999;">中转站（脱敏数据）</span>
-</div>
-
-<div class="footer">Generated by 小D · DataClaw</div>
-
+<p style="text-align:center;font-size:11px;color:#ccc;margin-top:16px">Generated by 小D · DataClaw</p>
 </body>
 </html>
