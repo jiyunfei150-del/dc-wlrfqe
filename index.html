@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据中转站架构图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    padding: 32px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+  }
+  .page-header p {
+    font-size: 13px;
+    color: #888;
+    margin-top: 6px;
+  }
+
+  .diagram {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+    overflow: hidden;
+    min-height: 560px;
+  }
+
+  /* ── 左侧：数据源区 ── */
+  .section-source {
+    flex: 0 0 260px;
+    background: #f0f4ff;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-right: none;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .dw-card {
+    background: #fff;
+    border: 1.5px solid #d0d9f5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  .dw-card .icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .dw-card .info { flex: 1; }
+  .dw-card .name { font-size: 13px; font-weight: 600; color: #2c3e50; }
+  .dw-card .desc { font-size: 11px; color: #aaa; margin-top: 2px; }
+  .dw-card .arrow {
+    position: absolute; right: -28px; top: 50%; transform: translateY(-50%);
+    width: 28px; height: 2px; background: #c5d0f0; z-index: 2;
+  }
+  .dw-card .arrow::after {
+    content: '';
+    position: absolute; right: -1px; top: -4px;
+    border: 5px solid transparent;
+    border-left-color: #c5d0f0;
+  }
+  .icon-domestic { background: #e8f4fd; }
+  .icon-overseas { background: #fdf0e8; }
+  .icon-finance  { background: #edfaf0; }
+  .icon-other    { background: #fdf5e8; }
+
+  /* ── 中间：安全墙 ── */
+  .section-wall {
+    flex: 0 0 110px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 10px;
+    gap: 18px;
+    position: relative;
+  }
+  .wall-title {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 3px;
+    position: absolute;
+    top: 24px;
+  }
+  .wall-badge {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+    width: 88px;
+    margin-top: 40px;
+  }
+  .wall-badge .b-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+  .wall-badge .b-name { font-size: 11px; color: #e0e0e0; font-weight: 600; line-height: 1.3; }
+  .wall-badge .b-desc { font-size: 10px; color: #aaa; margin-top: 2px; line-height: 1.3; }
+  .wall-line {
+    width: 1px;
+    flex: 1;
+    max-height: 20px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  /* ── 中右：中转站 ── */
+  .section-hub {
+    flex: 1;
+    background: #fff;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1.5px dashed #e0e0e0;
+  }
+  .hub-box {
+    border: 2px solid #4a6cf7;
+    border-radius: 12px;
+    padding: 18px 20px;
+    background: #f6f8ff;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .hub-title {
+    font-size: 15px; font-weight: 700; color: #4a6cf7;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #dde4fc;
+    padding-bottom: 10px;
+  }
+  .hub-feature {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #eaefff;
+  }
+  .hub-feature .f-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .hub-feature .f-text .f-name { font-size: 12px; font-weight: 600; color: #2c3e50; }
+  .hub-feature .f-text .f-detail { font-size: 11px; color: #999; margin-top: 2px; }
+  .hub-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .tag-blue  { background: #e8f0fe; color: #4a6cf7; }
+  .tag-green { background: #e8faf0; color: #27ae60; }
+  .tag-orange{ background: #fef0e8; color: #e67e22; }
+
+  /* 配置入口说明 */
+  .config-note {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #fffbe6;
+    border-left: 3px solid #f0c040;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #7a5a00;
+    line-height: 1.6;
+  }
+  .config-note strong { color: #5a3e00; }
+
+  /* ── 右侧：OpenClaw ── */
+  .section-oc {
+    flex: 0 0 200px;
+    background: #f9f9f9;
+    padding: 28px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .oc-box {
+    background: linear-gradient(135deg, #4a6cf7 0%, #7c3aed 100%);
+    border-radius: 14px;
+    padding: 20px 18px;
+    text-align: center;
+    color: #fff;
+    width: 100%;
+    box-shadow: 0 6px 20px rgba(74,108,247,0.3);
+  }
+  .oc-box .oc-logo { font-size: 36px; display: block; margin-bottom: 8px; }
+  .oc-box .oc-name { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+  .oc-box .oc-sub  { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 4px; }
+  .oc-conn {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid #d0d9f5;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .oc-conn strong { color: #4a6cf7; font-size: 12px; display: block; margin-bottom: 2px; }
+
+  /* 用户查询入口 */
+  .query-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 14px 20px;
+    background: #f0f4ff;
+    border-radius: 10px;
+    border: 1.5px dashed #b0bef5;
+  }
+  .query-row .q-icon { font-size: 24px; }
+  .query-row .q-text { font-size: 12px; color: #4a6cf7; font-weight: 600; }
+  .query-row .q-sub  { font-size: 11px; color: #999; }
+
+  /* 水平箭头连接 hub → oc */
+  .hub-to-oc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 4px 0;
+  }
+  .connect-arrow {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: #4a6cf7; font-weight: 600;
+  }
+  .arrow-line {
+    width: 40px; height: 2px; background: #4a6cf7;
+    position: relative;
+  }
+  .arrow-line::after {
+    content: '';
+    position: absolute; right: -1px; top: -4px;
+    border: 5px solid transparent;
+    border-left-color: #4a6cf7;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: #ccc;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>📡 数据中转站架构图</h1>
+  <p>分散数仓 → 安全管控层 → 统一中转站 → OpenClaw 智能问数</p>
+</div>
+
+<div class="diagram">
+
+  <!-- 左：数据源 -->
+  <div class="section-source">
+    <div class="section-label">数据源层 · 项目组数仓</div>
+
+    <div class="dw-card">
+      <div class="icon icon-domestic">🇨🇳</div>
+      <div class="info">
+        <div class="name">国内项目组 A</div>
+        <div class="desc">StarRocks · 上海</div>
+      </div>
+      <div class="arrow"></div>
+    </div>
+
+    <div class="dw-card">
+      <div class="icon icon-domestic">🎮</div>
+      <div class="info">
+        <div class="name">国内项目组 B</div>
+        <div class="desc">ClickHouse · 北京</div>
+      </div>
+      <div class="arrow"></div>
+    </div>
+
+    <div class="dw-card">
+      <div class="icon icon-overseas">🌏</div>
+      <div class="info">
+        <div class="name">海外项目组</div>
+        <div class="desc">BigQuery · 新加坡</div>
+      </div>
+      <div class="arrow"></div>
+    </div>
+
+    <div class="dw-card">
+      <div class="icon icon-finance">💰</div>
+      <div class="info">
+        <div class="name">财务数仓</div>
+        <div class="desc">StarRocks · 内网</div>
+      </div>
+      <div class="arrow"></div>
+    </div>
+
+    <div class="dw-card">
+      <div class="icon icon-other">📦</div>
+      <div class="info">
+        <div class="name">其他项目组</div>
+        <div class="desc">MySQL / PG · 各地</div>
+      </div>
+      <div class="arrow"></div>
+    </div>
+  </div>
+
+  <!-- 中：安全墙 -->
+  <div class="section-wall">
+    <div class="wall-title">安 全 管 控 层</div>
+
+    <div class="wall-badge">
+      <span class="b-icon">🔒</span>
+      <div class="b-name">脱敏处理</div>
+      <div class="b-desc">字段级<br>可配置</div>
+    </div>
+    <div class="wall-line"></div>
+    <div class="wall-badge">
+      <span class="b-icon">🛡️</span>
+      <div class="b-name">安全检测</div>
+      <div class="b-desc">敏感字段<br>二次扫描</div>
+    </div>
+    <div class="wall-line"></div>
+    <div class="wall-badge">
+      <span class="b-icon">📋</span>
+      <div class="b-name">访问审计</div>
+      <div class="b-desc">操作全量<br>日志记录</div>
+    </div>
+    <div class="wall-line"></div>
+    <div class="wall-badge">
+      <span class="b-icon">⚙️</span>
+      <div class="b-name">同步策略</div>
+      <div class="b-desc">T+1 / 1h<br>全量/增量</div>
+    </div>
+  </div>
+
+  <!-- 中右：中转站 -->
+  <div class="section-hub">
+    <div class="section-label">数据中转站</div>
+    <div class="hub-box">
+      <div class="hub-title">
+        🏗️ 统一数据中转站
+      </div>
+
+      <div class="hub-feature">
+        <span class="f-icon">📊</span>
+        <div class="f-text">
+          <div class="f-name">表接入配置</div>
+          <div class="f-detail">项目策划/制作人在查询平台自助选表接入 AI 分析</div>
+        </div>
+      </div>
+
+      <div class="hub-feature">
+        <span class="f-icon">🔐</span>
+        <div class="f-text">
+          <div class="f-name">脱敏规则配置</div>
+          <div class="f-detail">字段级脱敏，敏感字段替换为语义短码</div>
+          <div class="hub-tags">
+            <span class="tag tag-blue">项目:aecfbd</span>
+            <span class="tag tag-green">代理:cfabde</span>
+            <span class="tag tag-orange">主体:bdfaec</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hub-feature">
+        <span class="f-icon">🔄</span>
+        <div class="f-text">
+          <div class="f-name">同步调度</div>
+          <div class="f-detail">支持全量 / 增量，T+1 或每小时同步</div>
+        </div>
+      </div>
+
+      <div class="hub-feature">
+        <span class="f-icon">🗄️</span>
+        <div class="f-text">
+          <div class="f-name">脱敏数据存储</div>
+          <div class="f-detail">统一存储已脱敏的孪生视图，供 AI 查询</div>
+        </div>
+      </div>
+
+      <div class="config-note">
+        <strong>📌 配置入口：</strong>项目策划或制作人在 <strong>查询平台</strong> 中，针对每张表独立配置：是否加入 AI 分析、哪些字段需脱敏、同步方案与频率。配置完成后自动同步至中转站。
+      </div>
+    </div>
+  </div>
+
+  <!-- 右：OpenClaw -->
+  <div class="section-oc">
+    <div class="section-label" style="text-align:center">AI 分析层</div>
+
+    <div class="oc-box">
+      <span class="oc-logo">🤖</span>
+      <div class="oc-name">OpenClaw</div>
+      <div class="oc-sub">智能数据分析引擎</div>
+    </div>
+
+    <div class="oc-conn">
+      <strong>🔗 只读接入</strong>
+      仅读取中转站<br>脱敏后数据<br>网络隔离·权限最小化
+    </div>
+
+    <div class="oc-conn">
+      <strong>💬 自然语言问数</strong>
+      查询平台 / 飞书<br>直接对话查数据
+    </div>
+  </div>
+
+</div>
+
+<!-- 底部说明 -->
+<div class="query-row" style="margin-top:20px; background:#fff; border-color:#e0e0e0;">
+  <span class="q-icon">👤</span>
+  <div>
+    <div class="q-text">用户端：查询平台 / 飞书机器人</div>
+    <div class="q-sub">项目策划、制作人、财务、运营 均可通过自然语言直接问数，无需写 SQL</div>
+  </div>
+  <span style="font-size:20px; color:#4a6cf7">→</span>
+  <span style="font-size:20px">🤖</span>
+  <span style="font-size:11px; color:#4a6cf7; font-weight:600;">OpenClaw</span>
+  <span style="font-size:20px; color:#4a6cf7">→</span>
+  <span style="font-size:20px">🏗️</span>
+  <span style="font-size:11px; color:#999;">中转站（脱敏数据）</span>
+</div>
+
+<div class="footer">Generated by 小D · DataClaw</div>
+
+</body>
+</html>
